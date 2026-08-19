@@ -62,7 +62,7 @@ chmod +x build.sh
 
 > **Supported Distributions for Auto-Install**
 >
-> - **Arch Family:** Arch Linux, Manjaro, EndeavourOS, Garuda, Artix
+> - **Arch Family:** Arch Linux, CachyOS, Manjaro, EndeavourOS, Garuda, Artix
 > - **Debian/Ubuntu Family:** Ubuntu, Debian, Pop!_OS, Linux Mint, Elementary, Zorin, Kali
 > - **Fedora/RHEL Family:** Fedora, Nobara, Ultramarine, RHEL, Rocky Linux, AlmaLinux, CentOS
 > - **SUSE Family:** openSUSE (Leap & Tumbleweed), SUSE
