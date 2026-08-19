@@ -3,20 +3,19 @@ name: Automated Release Build
 on:
   push:
     tags:
-      - 'v*' # Triggered immer, wenn du ein Tag wie v1.0.0 pushst
-  workflow_dispatch: # Erlaubt es dir auch, den Build manuell auf GitHub zu starten
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Nötig, damit GitHub Actions ein Release erstellen darf
+      contents: write
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install System Dependencies
+      - name: Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential cmake git perl
@@ -26,7 +25,7 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.sh
 
-      - name: Clone & Build BeamMP-Launcher
+      - name: Build Launcher
         run: |
           export VCPKG_ROOT="$(pwd)/vcpkg"
           export PATH=$VCPKG_ROOT:$PATH
@@ -34,33 +33,37 @@ jobs:
           git clone https://github.com/BeamMP/BeamMP-Launcher.git
           cd BeamMP-Launcher
           
-          # Neuestes offizielles BeamMP-Tag holen
           LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "Building BeamMP-Launcher version: $LATEST_TAG"
           git checkout $LATEST_TAG
           
-          # CMake konfigurieren & bauen (ohne CMAKE_BUILD_TYPE=Release gegen den Server-Bug)
           cmake . -B bin -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux
           cmake --build bin --parallel
 
-      - name: Prepare Binary
+      - name: Copy Output
         run: |
           mkdir -p release_assets
           cp BeamMP-Launcher/bin/BeamMP-Launcher release_assets/BeamMP-Launcher
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: release_assets/BeamMP-Launcher
           name: "BeamMP Linux Launcher ${{ github.ref_name }}"
           body: |
-            Automated build of the native BeamMP Linux Launcher.
+            BeamMP Linux Launcher Build.
             
-            **Installation:**
-            1. Download `BeamMP-Launcher` below.
-            2. Run `chmod +x BeamMP-Launcher` in terminal.
-            3. Run `BROWSER=/usr/bin/xdg-open ./BeamMP-Launcher`.
+            1. Download `BeamMP-Launcher`
+            2. `chmod +x BeamMP-Launcher`
+            3. `BROWSER=/usr/bin/xdg-open ./BeamMP-Launcher`
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: BeamMP-Launcher-Linux
+          path: release_assets/BeamMP-Launcher
