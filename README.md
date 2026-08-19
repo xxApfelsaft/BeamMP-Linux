@@ -2,7 +2,9 @@
 
 **Pre-compiled BeamMP Launcher binaries & automated build scripts for the native BeamNG.drive Linux client.**
 
-[![Build BeamMP Launcher Binary](https://github.com/xxApfelsaft/BeamMP-Linux/actions/workflows/build.yml/badge.svg)](https://github.com/xxApfelsaft/BeamMP-Linux/actions/workflows/build.yml)
+[![Automated Release Build](https://github.com/xxApfelsaft/BeamMP-Linux/actions/workflows/release.yml/badge.svg)](https://github.com/xxApfelsaft/BeamMP-Linux/actions/workflows/release.yml)
+
+**the readme is once again mostly written by ai. (i am sorry but i hate writing readmes)**
 
 ---
 
@@ -60,16 +62,11 @@ chmod +x build.sh
 
 > **Supported Distributions for Auto-Install**
 >
-> * Arch Linux
-> * Manjaro
-> * EndeavourOS
-> * Debian
-> * Ubuntu
-> * Pop!_OS
-> * Linux Mint
-> * Fedora
-> * openSUSE
-> * SteamOS
+> - **Arch Family:** Arch Linux, Manjaro, EndeavourOS, Garuda, Artix
+> - **Debian/Ubuntu Family:** Ubuntu, Debian, Pop!_OS, Linux Mint, Elementary, Zorin, Kali
+> - **Fedora/RHEL Family:** Fedora, Nobara, Ultramarine, RHEL, Rocky Linux, AlmaLinux, CentOS
+> - **SUSE Family:** openSUSE (Leap & Tumbleweed), SUSE
+> - **Gaming & Independent:** SteamOS, Alpine, Gentoo, Void Linux, Solus, NixOS
 
 After building, the compiled binary will be placed inside:
 
