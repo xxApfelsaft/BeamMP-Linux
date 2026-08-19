@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+  schedule:
+    # Runs every day at 04:00 UTC to check for new upstream BeamMP releases
+    - cron: '0 4 * * *'
 
 jobs:
   build-and-release:
@@ -13,19 +16,36 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check Upstream BeamMP Version
+        id: check_version
+        run: |
+          # Fetch latest release tag from official BeamMP repository
+          LATEST_TAG=$(git ls-remote --tags https://github.com/BeamMP/BeamMP-Launcher.git | awk -F/ '{print $3}' | grep -v '\^{}' | tail -n 1)
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          
+          # Check if release already exists on this repository
+          EXISTS=$(gh release view "$LATEST_TAG" --repo "${{ github.repository }}" >/dev/null 2>&1 && echo "true" || echo "false")
+          echo "already_exists=$EXISTS" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Dependencies
+        if: steps.check_version.outputs.already_exists == 'false' || github.event_name != 'schedule'
         run: |
           sudo apt update
           sudo apt install -y build-essential cmake git perl
 
       - name: Setup vcpkg
+        if: steps.check_version.outputs.already_exists == 'false' || github.event_name != 'schedule'
         run: |
           git clone https://github.com/microsoft/vcpkg.git
           ./vcpkg/bootstrap-vcpkg.sh
 
       - name: Build Launcher
+        if: steps.check_version.outputs.already_exists == 'false' || github.event_name != 'schedule'
         run: |
           export VCPKG_ROOT="$(pwd)/vcpkg"
           export PATH=$VCPKG_ROOT:$PATH
@@ -33,25 +53,27 @@ jobs:
           git clone https://github.com/BeamMP/BeamMP-Launcher.git
           cd BeamMP-Launcher
           
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          LATEST_TAG=${{ steps.check_version.outputs.latest_tag }}
           git checkout $LATEST_TAG
           
           cmake . -B bin -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux
           cmake --build bin --parallel
 
       - name: Copy Output
+        if: steps.check_version.outputs.already_exists == 'false' || github.event_name != 'schedule'
         run: |
           mkdir -p release_assets
           cp BeamMP-Launcher/bin/BeamMP-Launcher release_assets/BeamMP-Launcher
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: (startsWith(github.ref, 'refs/tags/') || (github.event_name == 'schedule' && steps.check_version.outputs.already_exists == 'false'))
         uses: softprops/action-gh-release@v1
         with:
           files: release_assets/BeamMP-Launcher
-          name: "BeamMP Linux Launcher ${{ github.ref_name }}"
+          tag_name: ${{ steps.check_version.outputs.latest_tag }}
+          name: "BeamMP Linux Launcher ${{ steps.check_version.outputs.latest_tag }}"
           body: |
-            BeamMP Linux Launcher Build.
+            BeamMP Linux Launcher Build (${{ steps.check_version.outputs.latest_tag }}).
             
             1. Download `BeamMP-Launcher`
             2. `chmod +x BeamMP-Launcher`
